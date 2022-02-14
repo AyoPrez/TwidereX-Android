@@ -1,7 +1,7 @@
 /*
  *  Twidere X
  *
- *  Copyright (C) 2020-2021 Tlaster <tlaster@outlook.com>
+ *  Copyright (C) TwidereProject and Contributors
  * 
  *  This file is part of Twidere X.
  * 
@@ -51,6 +51,7 @@ import java.net.Proxy
 class HttpConfigClientFactory(private val configProvider: HttpConfigProvider) : HttpClientFactory {
     private val resourceCache = mutableMapOf<Class<*>, Pair<*, CacheIdentifier>>()
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Suppress("UNCHECKED_CAST")
     override fun <T> createResources(
         clazz: Class<T>,

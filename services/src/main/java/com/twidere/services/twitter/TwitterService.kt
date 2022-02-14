@@ -1,7 +1,7 @@
 /*
  *  Twidere X
  *
- *  Copyright (C) 2020-2021 Tlaster <tlaster@outlook.com>
+ *  Copyright (C) TwidereProject and Contributors
  * 
  *  This file is part of Twidere X.
  * 
@@ -23,6 +23,7 @@ package com.twidere.services.twitter
 import com.twidere.services.http.AuthorizationInterceptor
 import com.twidere.services.http.Errors
 import com.twidere.services.http.HttpClientFactory
+import com.twidere.services.http.MicroBlogNotFoundException
 import com.twidere.services.http.authorization.OAuth1Authorization
 import com.twidere.services.microblog.DirectMessageService
 import com.twidere.services.microblog.DownloadMediaService
@@ -248,6 +249,7 @@ class TwitterService(
             if (user.errors != null && user.errors.any()) {
                 throw TwitterApiException(
                     errors = user.errors.map {
+                        if ("Not Found Error".equals(it.title, true)) throw MicroBlogNotFoundException(it.detail)
                         Errors(
                             code = null,
                             message = null,
@@ -324,6 +326,14 @@ class TwitterService(
             searchV2("$query -is:retweet", count = count, nextPage = nextPage)
         } catch (e: TwitterApiExceptionV2) {
             searchV1("$query -filter:retweets", count = count, max_id = nextPage)
+        }
+    }
+
+    override suspend fun searchMedia(query: String, count: Int, nextPage: String?): ISearchResponse {
+        return try {
+            searchV2("$query has:media -is:retweet", count = count, nextPage = nextPage)
+        } catch (e: TwitterApiExceptionV2) {
+            searchV1("$query filter:media -filter:retweets", count = count, max_id = nextPage)
         }
     }
 
@@ -428,7 +438,7 @@ class TwitterService(
 
     override suspend fun delete(id: String) = resources.destroy(id)
 
-    private val BULK_SIZE: Long = 512 * 1024 // 512 Kib
+    private val BULK_SIZE: Long = 512 * 1024L // 512 Kib
 
     suspend fun update(
         status: String,
